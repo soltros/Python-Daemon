@@ -18,6 +18,7 @@ import shlex
 # Configuration
 DEFAULT_INSTANCE_NAME = "default"
 DEFAULT_BASE_DIR = "/tmp/daemon_instances"
+DEFAULT_LOG_DIR = "/tmp"
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10MB per log file
 MAX_LOG_FILES = 5
 
