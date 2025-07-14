@@ -467,7 +467,7 @@ def main():
 
     # Start command
     start_parser = subparsers.add_parser('start', help='Start a process')
-    start_parser.add_argument('command', help='Command to execute')
+    start_parser.add_argument('command_arg', help='Command to execute')
     start_parser.add_argument('--name', help='Process name')
     start_parser.add_argument('--dir', help='Working directory')
 
@@ -572,10 +572,12 @@ def main():
                     # Try to get process count
                     try:
                         client = DaemonClient(instance_paths['socket'])
-                        response = client.get_status()
+                        response = client.ping()
                         if response.get('success'):
-                            process_count = len(response['processes'])
-                            status += f" ({process_count} processes)"
+                            process_response = client.get_status()
+                            if process_response.get('success'):
+                                process_count = len(process_response['processes'])
+                                status += f" ({process_count} processes)"
                     except:
                         pass
                 else:
@@ -624,7 +626,8 @@ def main():
         client = DaemonClient(paths['socket'])
 
         if args.command == 'start':
-            response = client.start_process(args.command, args.name, args.dir)
+            # Use the renamed argument to avoid conflict
+            response = client.start_process(args.command_arg, args.name, args.dir)
             if response.get('success'):
                 print(f"Started process: {response['process_id']} (instance: {args.instance})")
             else:
@@ -661,14 +664,16 @@ def main():
                 # Follow log (simple implementation)
                 print(f"Following log for {args.process_id} in instance '{args.instance}' (Ctrl+C to stop)")
                 try:
+                    last_lines = []
                     while True:
                         response = client.get_log(args.process_id, args.lines)
                         if response.get('success'):
                             lines = response['log']
-                            # Clear screen and show recent lines
-                            os.system('clear')
-                            for line in lines:
-                                print(line)
+                            # Only show new lines
+                            if lines != last_lines:
+                                for line in lines:
+                                    print(line)
+                                last_lines = lines[:]
                         time.sleep(1)
                 except KeyboardInterrupt:
                     print("\nStopped following log")
